@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>WR Visualizations - Week 8</title>
+		
+		<script type="text/javascript" src="d3/d3.v3.js"></script>
+		<link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+		<link rel="stylesheet" type="text/css" href="main.css">
+		<script>
+			var _gaq = _gaq || [];
+			var pluginUrl = '//www.google-analytics.com/plugins/ga/inpage_linkid.js';
+			_gaq.push(['_require', 'inpage_linkid', pluginUrl]);
+			_gaq.push(['_setAccount', 'UA-40368986-4']);
+			_gaq.push(['_trackPageview']);
+
+			(function() {
+				var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+				ga.src = ('https:' == document.location.protocol ? 'http://' : 'http://') + 'stats.g.doubleclick.net/dc.js';
+				var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+			})();
+		</script>
+	</head>
+	<body>
+		<h1> Running Back Visualization</h1>
+		<h2> Description </h2>
+			<p> 
+				Hello! This is a beta preview of my newest data visualization for RBs. 
+				This particular graph shows a RB's fantasy points vs. the amount of targets
+				he gets, although there are <a href="http://claymcleod.github.io/blog/articles/week8-rb/">a few more</a>.
+				Please let me know what you think! (Click the buttons to make the graph change)
+			</p>
+		<center>
+			<select id="x_select" style="display: none;"></select>
+			<select id="y_select" style="display: none;"></select>
+			<button type="button" onclick="rotateX()">Rotate X Axis</button>
+			<button type="button" onclick="rotateY()">Rotate Y Axis</button>
+		</center>
+		<script type="text/javascript">
+
+		var headers = ["Name","Attempts","Yards","Tds","Fumbles","YPC","Fantasy Points"]	
+		var data = [
+		["DeMarco Murray",187,913,7,0,4.88,141.20] ,
+["Arian Foster",146,766,7,2,5.25,143.20] ,
+["Marshawn Lynch",111,467,3,3,4.21,97.40] ,
+["Jamaal Charles",77,363,4,2,4.71,80.20] ,
+["Le'Veon Bell",141,691,1,1,4.90,120.60] ,
+["LeSean McCoy",137,505,1,0,3.69,61.30] ,
+["Lamar Miller",95,469,4,1,4.94,84.50] ,
+["Ronnie Hillman",75,349,2,0,4.65,53.00] ,
+["Andre Ellington",128,464,2,1,3.62,87.80] ,
+["Giovani Bernard",109,446,5,0,4.09,92.50] ,
+["Ahmad Bradshaw",76,371,2,6,4.88,107.50] ,
+["Mark Ingram",58,331,4,0,5.71,60.90] ,
+["Ben Tate",84,305,3,0,3.63,48.90] ,
+["Jerick McKinnon",76,392,0,0,5.16,48.40] ,
+["Branden Oliver",85,352,2,1,4.14,69.40] ,
+["Justin Forsett",104,571,3,0,5.49,86.60] ,
+["Christopher Ivory",101,475,5,0,4.70,87.80] ,
+["Alfred Morris",115,440,3,0,3.83,61.90] ,
+["Shane Vereen",58,281,1,2,4.84,66.90] ,
+["Frank Gore",102,423,1,1,4.15,61.10] ,
+["Denard Robinson",68,329,1,0,4.84,43.60] ,
+["Andre Williams",89,280,2,0,3.15,42.50] ,
+["Darren McFadden",85,338,2,0,3.98,55.20] ,
+["Jeremy Hill",50,195,3,0,3.90,50.60] ,
+["Trent Richardson",101,358,2,0,3.54,61.10] ,
+["Jonathan Stewart",58,217,1,0,3.74,36.20] ,
+["Tre Mason",30,157,1,0,5.23,21.00] ,
+["Lorenzo Taliaferro",51,226,4,0,4.43,52.60] ,
+["Bobby Rainey",62,287,1,1,4.63,52.70] ,
+["Travaris Cadet",4,17,0,1,4.25,23.10] ,
+["Doug Martin",58,166,1,0,2.86,28.00] ,
+["Darren Sproles",32,211,3,0,6.59,56.90] ,
+["Carlos Hyde",48,161,2,0,3.35,29.30] ,
+["DeAngelo Williams",25,106,0,0,4.24,10.60] ,
+["Knile Davis",99,401,4,0,4.05,63.30] ,
+["Isaiah Crowell",52,256,4,0,4.92,47.20] ,
+["Benny Cunningham",40,163,2,1,4.08,47.20] ,
+["Juwan Thompson",24,107,3,0,4.46,28.70] ,
+["Chris Johnson",67,268,1,1,4.00,44.00] ,
+["Matt Asiata",74,251,3,1,3.39,63.90] ,
+["Roy Helu",30,163,1,0,5.43,48.60] ,
+["Terrance West",66,254,2,0,3.85,41.10] ,
+["Zac Stacy",66,257,1,0,3.89,41.20] ,
+["Ryan Mathews",23,71,1,0,3.09,15.70] ,
+["Peyton Hillis",21,91,0,0,4.33,12.30] ,
+["Bernard Pierce",55,196,2,0,3.56,30.30] ,
+["Toby Gerhart",52,133,1,0,2.56,25.90] ,
+
+		]
+		var x_axis_columns = [1, 2, 3, 4, 5, 6] // Must always be ascending order of columns for label indexing!
+		var y_axis_columns = [1, 2, 3, 4, 5, 6] // Must always be ascending order of columns for label indexing!
+		var current_x_axis = 5
+		var current_y_axis = 0
+		
+		var padding = 30;
+		var width_of_svg = 800;
+		var height_of_svg = 500;
+		
+		// Setup
+		
+		var select = document.getElementById("x_select");
+		
+		for(var i = 0; i < headers.length; i++) {
+    		var opt = headers[i];
+    		var el = document.createElement("option");
+    		el.textContent = opt;
+    		el.value = opt;
+    		select.appendChild(el);
+		}	
+		
+		var select = document.getElementById("y_select");
+		
+		for(var i = 0; i < y_axis_columns.length; i++) {
+    		var opt = headers[y_axis_columns[i]];
+    		var el = document.createElement("option");
+    		el.textContent = opt;
+    		el.value = opt;
+    		select.appendChild(el);
+		}	
+
+		// Calculations
+		
+		var array = create_scatterplot(data, "Attempts vs. Fantasy Points", 1, "Targets", 6, "Fantasy Points (Standard)")
+		var circles = array[0]
+		var svg = array[1]
+		
+		// FUNCTIONS
+		
+		function create_scatterplot(data, title, x_axis_column, x_label, y_axis_column, y_label) {
+			
+	
+			
+			//Create scale functions
+			var xScale = d3.scale.linear()
+								 .domain([d3.min(data, function(d) { return d[x_axis_column]; }) - 5, d3.max(data, function(d) { return d[x_axis_column]; }) + 5])
+								 .range([padding, width_of_svg - padding * 2]);
+
+			var yScale = d3.scale.linear()
+								 .domain([d3.min(data, function(d) { return d[y_axis_column]; }) - 5, d3.max(data, function(d) { return d[y_axis_column]; }) + 5])
+								 .range([height_of_svg - padding, padding]);
+
+			var rScale = d3.scale.linear()
+								 .domain([1, data.length])
+								 .range([20, 3]);
+								 
+			var colorScale = d3.scale.linear()
+								 .domain([1, data.length / 2, data.length])
+								 .range(["red", "orange", "green"]);
+
+			//Define X axis
+			var xAxis = d3.svg.axis()
+							  .scale(xScale)
+							  .orient("bottom")
+							  .ticks(5);
+
+			//Define Y axis
+			var yAxis = d3.svg.axis()
+							  .scale(yScale)
+							  .orient("left")
+							  .ticks(5);
+			
+			
+			var svg = d3.select("body")
+				.append("svg")
+				.style("display", "block")
+				.style("width", width_of_svg + "px") 
+				.style("height", height_of_svg + "px")
+				.style("margin-left", "auto")
+				.style("margin-right", "auto")
+				.style("padding-bottom", "55px");
+			
+			svg.append("text")
+				.attr("x", (width_of_svg / 2))			   
+				.attr("y", 45)
+				.attr("text-anchor", "middle")	
+				.style("font-size", "36px") 
+				.style("font-family", "Baskerville, \"Times New Roman\", serif")
+				.text(title);
+				
+			var tooltip = d3.select("body")
+				.append("div")
+				.style("position", "absolute")
+				.style("z-index", "10")
+				.style("visibility", "hidden")
+				.style("font-size", "16px")
+				.style("font-family", "Baskerville, \"Times New Roman\", serif")
+				.text("");
+			
+			var circles = svg.selectAll("circle")
+			   .data(data)
+			   .enter()
+			   .append("circle")
+			   .attr("cx", function(d) {
+					return xScale(d[x_axis_column]);
+			   })
+			   .attr("cy", function(d) {
+					return yScale(d[y_axis_column]);
+			   })
+			   .attr("r", function(d, i) {
+					return rScale(i);
+			   })
+			   .attr("fill", function(d, i) {
+					return colorScale(i);
+			   })
+			   .attr("stroke", "black")
+			   .attr("stroke-width", 1)
+			   .on("mouseover", function(d) {	   
+					d3.select(this).transition()		
+					.duration(200)		
+					.style("opacity", 1);  
+					return tooltip.style("visibility", "visible");	 
+			})	 
+			.on("mousemove", function(d, i){
+				var name = data[i][0]
+				return tooltip.text(name).style("top", (event.pageY-10)+"px").style("left",(event.pageX+10)+"px");
+			})				 
+			.on("mouseout", function(d) {  
+				d3.select(this).transition()		
+					.duration(200)		
+					.style("opacity", .35); 
+				return tooltip.style("visibility", "hidden");	
+			});
+			   
+			svg.append("g")
+				.attr("class", "axis")
+				.attr("transform", "translate(0," + (height_of_svg - padding) + ")")
+				.call(xAxis);
+			
+			svg.append("g")
+				.attr("class", "axis")
+				.attr("transform", "translate(" + padding + ",0)")
+				.call(yAxis);
+				
+			svg.append("text")
+				.attr("text-anchor", "end")
+				.attr("x", width_of_svg - 68)
+				.attr("y", height_of_svg - 38)
+				.text(x_label);
+	
+			svg.append("text")
+				.attr("text-anchor", "end")
+				.attr("x", -38)
+				.attr("y", 38)
+				.attr("dy", ".75em")
+				.attr("transform", "rotate(-90)")
+				.text(y_label);
+	
+			circles.transition()
+				 .duration(3000)
+				 .style("opacity", 0.35);
+				 
+			return [circles, svg];
+		}
+		
+		function renderNextVisualization() {
+			var i = current_y_axis;
+				
+			//Create scale functions
+			var xScale = d3.scale.linear()
+								 .domain([d3.min(data, function(d) { return d[x_axis_columns[current_x_axis]]; }) - 5, d3.max(data, function(d) { return d[x_axis_columns[current_x_axis]]; }) + 5])
+								 .range([padding, width_of_svg - padding * 2]);
+
+			var yScale = d3.scale.linear()
+								 .domain([d3.min(data, function(d) { return d[y_axis_columns[current_y_axis]]; }) - 5, d3.max(data, function(d) { return d[y_axis_columns[current_y_axis]]; }) + 5])
+								 .range([height_of_svg - padding, padding]);
+
+			var rScale = d3.scale.linear()
+								 .domain([1, data.length])
+								 .range([20, 3]);
+								 
+			var colorScale = d3.scale.linear()
+								 .domain([1, data.length / 2, data.length])
+								 .range(["red", "orange", "green"]);
+
+			//Define X axis
+			var xAxis = d3.svg.axis()
+							  .scale(xScale)
+							  .orient("bottom")
+							  .ticks(5);
+
+			//Define Y axis
+			var yAxis = d3.svg.axis()
+							  .scale(yScale)
+							  .orient("left")
+							  .ticks(5);
+			
+			svg.selectAll("g").remove()
+			svg.selectAll("text").remove()
+			svg.append("g")
+				.attr("class", "axis")
+				.attr("transform", "translate(0," + (height_of_svg - padding) + ")")
+				.call(xAxis);
+			
+			svg.append("g")
+				.attr("class", "axis")
+				.attr("transform", "translate(" + padding + ",0)")
+				.call(yAxis);
+				
+			svg.append("text")
+				.attr("text-anchor", "end")
+				.attr("x", width_of_svg - 68)
+				.attr("y", height_of_svg - 38)
+				.text(headers[x_axis_columns[0] + current_x_axis]);
+	
+			svg.append("text")
+				.attr("text-anchor", "end")
+				.attr("x", -38)
+				.attr("y", 38)
+				.attr("dy", ".75em")
+				.attr("transform", "rotate(-90)")
+				.text(headers[y_axis_columns[0] + current_y_axis]);
+			
+			svg.append("text")
+				.attr("x", (width_of_svg / 2))			   
+				.attr("y", 45)
+				.attr("text-anchor", "middle")	
+				.style("font-size", "36px") 
+				.style("font-family", "Baskerville, \"Times New Roman\", serif")
+				.text(headers[x_axis_columns[current_x_axis]] +" vs. "+headers[y_axis_columns[0] + current_y_axis]);
+						
+			circles.transition()
+				.attr("cx", function(d, i) {
+  					return xScale(data[i][x_axis_columns[current_x_axis]]);
+  				})
+  				.attr("cy", function(d, i) {
+  					return yScale(data[i][y_axis_columns[current_y_axis]]);
+  				})
+  				.duration(1000) // this is 1s
+  				.delay(100)     // this is 0.1s	
+		
+			return i;
+		}
+		
+		function rotateX() {
+			current_x_axis = current_x_axis + 1;
+			
+			if (current_x_axis == current_y_axis) {
+				current_x_axis = current_x_axis + 1
+			}
+			
+			if(current_x_axis > (x_axis_columns.length - 1)) {
+				current_x_axis = 0;
+			}
+			
+			if (current_x_axis == current_y_axis) {
+				current_x_axis = current_x_axis + 1
+			}
+			renderNextVisualization()
+		}
+		
+		function rotateY() {
+			current_y_axis = current_y_axis + 1;
+			
+			if (current_x_axis == current_y_axis) {
+				current_y_axis = current_y_axis + 1
+			}
+			
+			if(current_y_axis > (y_axis_columns.length - 1)) {
+				current_y_axis = 0;
+			}
+			
+			if (current_x_axis == current_y_axis) {
+				current_y_axis = current_y_axis + 1
+			}
+			
+			renderNextVisualization()
+		}
+
+		</script>
+	</body>
+</html>

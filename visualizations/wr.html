@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>WR Visualizations - Week 8</title>
+		
+		<script type="text/javascript" src="d3/d3.v3.js"></script>
+		<link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+		<link rel="stylesheet" type="text/css" href="main.css">
+		<script>
+			var _gaq = _gaq || [];
+			var pluginUrl = '//www.google-analytics.com/plugins/ga/inpage_linkid.js';
+			_gaq.push(['_require', 'inpage_linkid', pluginUrl]);
+			_gaq.push(['_setAccount', 'UA-40368986-4']);
+			_gaq.push(['_trackPageview']);
+
+			(function() {
+				var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+				ga.src = ('https:' == document.location.protocol ? 'http://' : 'http://') + 'stats.g.doubleclick.net/dc.js';
+				var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+			})();
+		</script>
+	</head>
+	<body>
+		<h1> Wide Receiver Visualization</h1>
+		<h2> Description </h2>
+			<p> 
+				Hello! This is a beta preview of my newest data visualization for WRs. 
+				This particular graph shows a WR's fantasy points vs. the amount of targets
+				he gets, although there are <a href="http://claymcleod.github.io/blog/articles/week8-wr/">a few more</a>.
+				Please let me know what you think! (Click the buttons to make the graph change)
+			</p>
+		<center>
+			<select id="x_select" style="display: none;"></select>
+			<select id="y_select" style="display: none;"></select>
+			<button type="button" onclick="rotateX()">Rotate X Axis</button>
+			<button type="button" onclick="rotateY()">Rotate Y Axis</button>
+		</center>
+		<script type="text/javascript">
+		/*	   
+			var data = d3.csv("wr_visualization.csv", function(player)
+			{
+				console.log("Player:", player)
+				data = player.map(function(d)
+				{
+					console.log(d)
+					return {
+						"Name":d.Name, "Targets":+d.Targets, "YPC":+d.YPC
+					}
+				})
+				
+				return data
+			})
+		*/
+		var headers = ["Name", "Targets", "Receptions", "Yards", "TDs", "YPC", "Fantasy Points"]
+		
+		var data = [
+		           ["Dez Bryant",69,45,590,4,13.11,83.00] ,
+["Antonio Brown",87,60,852,7,14.20,127.20] ,
+["Demaryius Thomas",76,47,767,6,16.32,112.70] ,
+["Jeremy Maclin",76,39,632,6,16.21,99.20] ,
+["Ty Hilton",78,53,866,2,16.34,98.60] ,
+["Kelvin Benjamin",68,38,571,5,15.03,87.10] ,
+["Emmanuel Sanders",60,47,634,4,13.49,87.40] ,
+["Mike Wallace",59,32,418,5,13.06,71.80] ,
+["Steve Smith",69,41,675,4,16.46,91.50] ,
+["DeSean Jackson",54,32,664,3,20.75,84.40] ,
+["Andre Johnson",75,46,551,1,11.98,61.10] ,
+["A.J. Green",25,17,314,2,18.47,43.40] ,
+["DeAndre Hopkins",53,36,569,3,15.81,74.90] ,
+["Mohamed Sanu",58,35,533,3,15.23,71.30] ,
+["Terrance Williams",39,25,407,6,16.28,76.70] ,
+["Keenan Allen",64,43,427,1,9.93,48.70] ,
+["Vincent Jackson",65,26,357,2,13.73,47.70] ,
+["Larry Fitzgerald",49,30,443,2,14.77,56.30] ,
+["Rueben Randle",58,34,321,2,9.44,44.10] ,
+["Pierre Garcon",57,39,443,3,11.36,62.30] ,
+["Michael Floyd",43,19,353,2,18.58,47.30] ,
+["Brandin Cooks",51,40,372,2,9.30,49.20] ,
+["Brandon LaFell",50,30,461,4,15.37,70.10] ,
+["Doug Baldwin",43,29,371,1,12.79,43.10] ,
+["Odell Beckham Jr.",15,10,106,3,10.60,28.60] ,
+["Anquan Boldin",55,39,447,1,11.46,50.70] ,
+["Eric Decker",52,31,363,3,11.71,54.30] ,
+["Michael Crabtree",51,32,322,3,10.06,50.20] ,
+["Marques Colston",44,25,408,1,16.32,46.80] ,
+["Julian Edelman",69,45,467,1,10.38,52.70] ,
+["Allen Robinson",63,39,453,2,11.62,57.30] ,
+["Andrew Hawkins",61,36,470,1,13.06,53.00] ,
+["Wes Welker",24,19,181,1,9.53,24.10] ,
+["Denard Robinson",15,12,47,0,3.92,4.70] ,
+["Mike Evans",42,25,336,2,13.44,45.60] ,
+["Cordarrelle Patterson",49,25,299,1,11.96,35.90] ,
+["Dwayne Bowe",36,25,343,0,13.72,34.30] ,
+["Andre Holmes",41,23,372,4,16.17,61.20] ,
+["Donte Moncrief",23,16,216,1,13.50,27.60] ,
+["Martavis Bryant",12,7,123,3,17.57,30.30] ,
+["Torrey Smith",41,18,308,4,17.11,54.80] ,
+["Cecil Shorts",47,23,216,1,9.39,27.60] ,
+["Malcom Floyd",39,24,470,3,19.58,65.00] ,
+["Percy Harvin",26,22,133,0,6.05,13.30] ,
+["Greg Jennings",48,29,383,2,13.21,50.30] ,
+["James Jones",54,36,425,3,11.81,60.50] ,
+["John Brown",43,22,316,4,14.36,55.60] ,
+["Reggie Wayne",62,38,434,1,11.42,49.40] ,
+["Steve Johnson",32,25,315,3,12.60,49.50] ,
+["Kenny Britt",31,16,249,1,15.56,30.90] ,
+			  ];
+			
+		var x_axis_columns = [1, 2, 3, 4, 5, 6] // Must always be ascending order of columns for label indexing!
+		var y_axis_columns = [1, 2, 3, 4, 5, 6] // Must always be ascending order of columns for label indexing!
+		var current_x_axis = 5
+		var current_y_axis = 0
+		
+		var padding = 30;
+		var width_of_svg = 800;
+		var height_of_svg = 500;
+		
+		// Setup
+		
+		var select = document.getElementById("x_select");
+		
+		for(var i = 0; i < headers.length; i++) {
+    		var opt = headers[i];
+    		var el = document.createElement("option");
+    		el.textContent = opt;
+    		el.value = opt;
+    		select.appendChild(el);
+		}	
+		
+		var select = document.getElementById("y_select");
+		
+		for(var i = 0; i < y_axis_columns.length; i++) {
+    		var opt = headers[y_axis_columns[i]];
+    		var el = document.createElement("option");
+    		el.textContent = opt;
+    		el.value = opt;
+    		select.appendChild(el);
+		}	
+
+		// Calculations
+		var array = create_scatterplot(data, "Targets vs. Fantasy Points", 1, "Targets", 6, "Fantasy Points (Standard)")
+		var circles = array[0]
+		var svg = array[1]
+		//create_scatterplot(data, "Targets vs. Yards", 1, "Targets", 3, "Yards")
+		//create_scatterplot(data, "YPC vs. Fantasy Points", 5, "Yards Per Catch", 6, "Fantasy Points (Standard)")
+		
+		// FUNCTIONS
+		
+		function create_scatterplot(data, title, x_axis_column, x_label, y_axis_column, y_label) {
+			
+	
+			
+			//Create scale functions
+			var xScale = d3.scale.linear()
+								 .domain([d3.min(data, function(d) { return d[x_axis_column]; }) - 5, d3.max(data, function(d) { return d[x_axis_column]; }) + 5])
+								 .range([padding, width_of_svg - padding * 2]);
+
+			var yScale = d3.scale.linear()
+								 .domain([d3.min(data, function(d) { return d[y_axis_column]; }) - 5, d3.max(data, function(d) { return d[y_axis_column]; }) + 5])
+								 .range([height_of_svg - padding, padding]);
+
+			var rScale = d3.scale.linear()
+								 .domain([1, data.length])
+								 .range([20, 3]);
+								 
+			var colorScale = d3.scale.linear()
+								 .domain([1, data.length / 2, data.length])
+								 .range(["red", "orange", "green"]);
+
+			//Define X axis
+			var xAxis = d3.svg.axis()
+							  .scale(xScale)
+							  .orient("bottom")
+							  .ticks(5);
+
+			//Define Y axis
+			var yAxis = d3.svg.axis()
+							  .scale(yScale)
+							  .orient("left")
+							  .ticks(5);
+			
+			
+			var svg = d3.select("body")
+				.append("svg")
+				.style("display", "block")
+				.style("width", width_of_svg + "px") 
+				.style("height", height_of_svg + "px")
+				.style("margin-left", "auto")
+				.style("margin-right", "auto")
+				.style("padding-bottom", "55px");
+			
+			svg.append("text")
+				.attr("x", (width_of_svg / 2))			   
+				.attr("y", 45)
+				.attr("text-anchor", "middle")	
+				.style("font-size", "36px") 
+				.style("font-family", "Baskerville, \"Times New Roman\", serif")
+				.text(title);
+				
+			var tooltip = d3.select("body")
+				.append("div")
+				.style("position", "absolute")
+				.style("z-index", "10")
+				.style("visibility", "hidden")
+				.style("font-size", "16px")
+				.style("font-family", "Baskerville, \"Times New Roman\", serif")
+				.text("");
+			
+			var circles = svg.selectAll("circle")
+			   .data(data)
+			   .enter()
+			   .append("circle")
+			   .attr("cx", function(d) {
+					return xScale(d[x_axis_column]);
+			   })
+			   .attr("cy", function(d) {
+					return yScale(d[y_axis_column]);
+			   })
+			   .attr("r", function(d, i) {
+					return rScale(i);
+			   })
+			   .attr("fill", function(d, i) {
+					return colorScale(i);
+			   })
+			   .attr("stroke", "black")
+			   .attr("stroke-width", 1)
+			   .on("mouseover", function(d) {	   
+					d3.select(this).transition()		
+					.duration(200)		
+					.style("opacity", 1);  
+					return tooltip.style("visibility", "visible");	 
+			})	 
+			.on("mousemove", function(d, i){
+				var name = data[i][0]
+				return tooltip.text(name).style("top", (event.pageY-10)+"px").style("left",(event.pageX+10)+"px");
+			})				 
+			.on("mouseout", function(d) {  
+				d3.select(this).transition()		
+					.duration(200)		
+					.style("opacity", .35); 
+				return tooltip.style("visibility", "hidden");	
+			});
+			   
+			svg.append("g")
+				.attr("class", "axis")
+				.attr("transform", "translate(0," + (height_of_svg - padding) + ")")
+				.call(xAxis);
+			
+			svg.append("g")
+				.attr("class", "axis")
+				.attr("transform", "translate(" + padding + ",0)")
+				.call(yAxis);
+				
+			svg.append("text")
+				.attr("text-anchor", "end")
+				.attr("x", width_of_svg - 68)
+				.attr("y", height_of_svg - 38)
+				.text(x_label);
+	
+			svg.append("text")
+				.attr("text-anchor", "end")
+				.attr("x", -38)
+				.attr("y", 38)
+				.attr("dy", ".75em")
+				.attr("transform", "rotate(-90)")
+				.text(y_label);
+	
+			circles.transition()
+				 .duration(3000)
+				 .style("opacity", 0.35);
+				 
+			return [circles, svg];
+		}
+		
+		function renderNextVisualization() {
+			var i = current_y_axis;
+				
+			//Create scale functions
+			var xScale = d3.scale.linear()
+								 .domain([d3.min(data, function(d) { return d[x_axis_columns[current_x_axis]]; }) - 5, d3.max(data, function(d) { return d[x_axis_columns[current_x_axis]]; }) + 5])
+								 .range([padding, width_of_svg - padding * 2]);
+
+			var yScale = d3.scale.linear()
+								 .domain([d3.min(data, function(d) { return d[y_axis_columns[current_y_axis]]; }) - 5, d3.max(data, function(d) { return d[y_axis_columns[current_y_axis]]; }) + 5])
+								 .range([height_of_svg - padding, padding]);
+
+			var rScale = d3.scale.linear()
+								 .domain([1, data.length])
+								 .range([20, 3]);
+								 
+			var colorScale = d3.scale.linear()
+								 .domain([1, data.length / 2, data.length])
+								 .range(["red", "orange", "green"]);
+
+			//Define X axis
+			var xAxis = d3.svg.axis()
+							  .scale(xScale)
+							  .orient("bottom")
+							  .ticks(5);
+
+			//Define Y axis
+			var yAxis = d3.svg.axis()
+							  .scale(yScale)
+							  .orient("left")
+							  .ticks(5);
+			
+			svg.selectAll("g").remove()
+			svg.selectAll("text").remove()
+			svg.append("g")
+				.attr("class", "axis")
+				.attr("transform", "translate(0," + (height_of_svg - padding) + ")")
+				.call(xAxis);
+			
+			svg.append("g")
+				.attr("class", "axis")
+				.attr("transform", "translate(" + padding + ",0)")
+				.call(yAxis);
+				
+			svg.append("text")
+				.attr("text-anchor", "end")
+				.attr("x", width_of_svg - 68)
+				.attr("y", height_of_svg - 38)
+				.text(headers[x_axis_columns[0] + current_x_axis]);
+	
+			svg.append("text")
+				.attr("text-anchor", "end")
+				.attr("x", -38)
+				.attr("y", 38)
+				.attr("dy", ".75em")
+				.attr("transform", "rotate(-90)")
+				.text(headers[y_axis_columns[0] + current_y_axis]);
+			
+			svg.append("text")
+				.attr("x", (width_of_svg / 2))			   
+				.attr("y", 45)
+				.attr("text-anchor", "middle")	
+				.style("font-size", "36px") 
+				.style("font-family", "Baskerville, \"Times New Roman\", serif")
+				.text(headers[x_axis_columns[current_x_axis]] +" vs. "+headers[y_axis_columns[0] + current_y_axis]);
+						
+			circles.transition()
+				.attr("cx", function(d, i) {
+  					return xScale(data[i][x_axis_columns[current_x_axis]]);
+  				})
+  				.attr("cy", function(d, i) {
+  					return yScale(data[i][y_axis_columns[current_y_axis]]);
+  				})
+  				.duration(1000) // this is 1s
+  				.delay(100)     // this is 0.1s	
+		
+			return i;
+		}
+		
+		function rotateX() {
+			current_x_axis = current_x_axis + 1;
+			
+			if (current_x_axis == current_y_axis) {
+				current_x_axis = current_x_axis + 1
+			}
+			
+			if(current_x_axis > (x_axis_columns.length - 1)) {
+				current_x_axis = 0;
+			}
+			
+			if (current_x_axis == current_y_axis) {
+				current_x_axis = current_x_axis + 1
+			}
+			renderNextVisualization()
+		}
+		
+		function rotateY() {
+			current_y_axis = current_y_axis + 1;
+			
+			if (current_x_axis == current_y_axis) {
+				current_y_axis = current_y_axis + 1
+			}
+			
+			if(current_y_axis > (y_axis_columns.length - 1)) {
+				current_y_axis = 0;
+			}
+			
+			if (current_x_axis == current_y_axis) {
+				current_y_axis = current_y_axis + 1
+			}
+			
+			renderNextVisualization()
+		}
+
+		</script>
+	</body>
+</html>
